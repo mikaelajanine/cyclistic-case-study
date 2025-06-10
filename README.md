@@ -1,18 +1,4 @@
 ---
-title: "One Ride Isn’t Enough: How Cyclistic Can Win Over Casual Riders"
-author: "Mikaela Janine"
-date: "2025-06-09"
-output: 
-  html_document:
-    theme: flatly
-    toc: true
-    toc_float: true
-    number_sections: false
-    df_print: paged
-    code_folding: hide
----
-
----
 
 **Let’s talk bikes**. Specifically, bike-share bikes. If you’ve ever rolled through the city with Cyclistic, your ride might tell a bigger story than you think.
 
@@ -36,7 +22,7 @@ If you're just here for the takeaways, feel free to skip the behind-the-scenes. 
 
 First things first, I loaded the necessary packages and brought in the data.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(dplyr)
 library(stringr)
@@ -53,7 +39,7 @@ library(kableExtra)
 
 I worked with four separate datasets—one for each quarter of 2019. But things got a little messy with the second quarter. Its column names didn’t match the other three. Same data, just different labels. So, I renamed the Q2 columns to match the others so I could combine everything into one clean dataset for the full year.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 q1 <- read_csv("Divvy_Trips_2019_Q1.csv")
 q2 <- read_csv("Divvy_Trips_2019_Q2.csv")
 q3 <- read_csv("Divvy_Trips_2019_Q3.csv")
@@ -63,14 +49,14 @@ names(q2) <- c("trip_id", "start_time", "end_time", "bikeid", "tripduration", "f
 
 Once that was done, I removed rows with missing values. I know deleting data sounds a bit harsh, but I checked. The missing values were random and didn’t seem critical, so it felt safe to drop them to keep the dataset clean and analysis-ready.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 data <- bind_rows(q1, q2, q3, q4)
 df <- na.omit(data)
 ```
 
 Next, I wanted to double-check the trip IDs. They should all be 8-digit numbers, but some came up short—literally. After a quick summary, I found 4 trip IDs that only had 7 digits. I looked into it, but without a way to verify or correct them, I chose to exclude those entries. Not ideal, but for clean, reliable analysis, I figured it was the best call.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Inspect and filter trip_id lengths
 df_summary <- df %>%
   mutate(
@@ -105,7 +91,7 @@ trip_ids_7_digits
 
 Now let’s take a closer look at the data. Specifically, the number of unique values in each column.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 sapply(df, function(x) length(unique(x)))
 ```
 
@@ -115,14 +101,14 @@ So what’s going on?
 
 Some station names had extra characters like asterisks, spaces, or notes in parentheses (like “(temp)”), which made the same station appear under different names. To clean that up, I stripped out the extra spaces, anything inside parentheses, and any asterisks.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 df <- df %>%
   mutate(from_station_name = str_trim(str_remove(from_station_name, "\\s*\\(.*\\)|\\*")))
 ```
 
 I review the remaining from_station_id with more than 1 unique names
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 df %>%
   group_by(from_station_id) %>%
   summarise(unique_names = n_distinct(from_station_name)) %>%
@@ -130,14 +116,14 @@ df %>%
 ```
 When I looked closer, I saw they referred to the same place, just written differently.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 df %>%
   filter(from_station_id == 645) %>%
   distinct(from_station_name)
 ```
 So I checked which name appeared more often and used that as the standard.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 df %>%
   filter(from_station_id == 645) %>%
   count(from_station_name, sort = TRUE) %>%
@@ -145,7 +131,7 @@ df %>%
 ```
 Then I replaced the less common variations to keep things consistent.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 corrections <- data.frame(
   from_station_id = c(19, 217, 238, 286, 645),
   incorrect_name = c("Loomis St & Taylor St", "Racine Ave & Fulton St", "Wolcott", "Franklin St & Adams St", "Archer"),
@@ -161,12 +147,12 @@ df <- df %>%
 
 After the cleanup, every from_station_id matched exactly one from_station_name. Much better.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 sapply(df, function(x) length(unique(x)))
 ```
 Next, I did the same cleanup for to_station_id and to_station_name. That’s sorted now too.
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Clean, identify inconsistencies, apply corrections, and check uniqueness
 df <- df %>%
   mutate(to_station_name = str_trim(str_remove(to_station_name, "\\s*\\(.*\\)|\\*"))) %>%
@@ -196,7 +182,7 @@ sapply(df, function(x) length(unique(x)))
 ```
 Then I moved on to review the birthyear column. The minimum value was 1759 and the maximum was 2014 — which clearly doesn’t add up. No one riding in 2019 was born in the 1700s. That 1759 entry looked like a typo, so I assumed it was meant to be 1959.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 df %>%
   summarise(
     min_birthyear = min(birthyear, na.rm = TRUE),
@@ -206,7 +192,7 @@ df %>%
 
 Looking further, I also found a 1790 in the mix. Again, likely a typo, so I adjusted it to 1990.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 df <- df %>%
   mutate(birthyear = case_when(
     birthyear == 1759 ~ 1959,
@@ -217,7 +203,7 @@ df <- df %>%
 
 With those fixes, the data looks much cleaner and more realistic. Ready to move forward.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 df %>%
   summarise(
     min_birthyear = min(birthyear, na.rm = TRUE),
@@ -250,7 +236,7 @@ Next, I grouped some of the values into categories:
 
 These added layers help us better understand who’s riding and when.
 
-```{r message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 df <- df %>%
   mutate(
     age = 2019 - birthyear,
@@ -282,7 +268,7 @@ ___
 
 A quick glance at the numbers shows Cyclistic is driven mostly by its loyal members. They account for a huge 89.4% of all rides, while casual riders make up just 10.6%. That gap naturally raises a few questions: What sets these two groups apart? And more importantly, what would it take to turn more casual riders into long-term members?
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Prepare percentage data
 user_counts <- df %>%
   count(usertype) %>%
@@ -328,7 +314,7 @@ ggplot(user_counts, aes(x = 2, y = percent, fill = usertype)) +
 
 To start answering that, let’s look at when people are riding. August sees the most action for both groups—no surprise, it’s summer and the city’s buzzing. But patterns shift once we break it down by days of the week. Members are more active during weekdays, suggesting a steady, regular habit. Casual riders, on the other hand, come alive on weekends, when the pace is slower and the vibe is more relaxed.
 
-```{r monthly-weekday-usage-dashboard, fig.width=14, fig.height=10, warning=FALSE, message=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 # Shared theme
 base_theme <- theme_minimal(base_size = 14) +
@@ -416,7 +402,7 @@ weekday_customers <- df %>%
 
 That difference becomes even clearer when we check the time of day. Members hop on mostly in the morning, but usage stays solid throughout the day. Casual riders tend to peak in the afternoon, probably when the weather’s nicer and the day feels more open. Interestingly, both groups hit their highest point around 5 PM—just as the workday ends and the city transitions into evening.
 
-```{r fig.width=14, fig.height=10, warning=FALSE, message=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 base_theme <- theme_minimal(base_size = 14) +
   theme(
     plot.title = element_text(face = "bold", size = 16, hjust = 0.5, color = "gray20"),
@@ -531,7 +517,7 @@ ride_volume_hour_all <- ggplot(hourly_summary, aes(x = hour, y = count)) +
 
 Now, let’s talk about who's on these bikes. Young adults lead the way across both rider types, which makes sense in a city that moves fast. But there’s a gender gap worth noting—male riders significantly outnumber female riders. That imbalance points to a broader opportunity: how might Cyclistic create a riding experience that feels safer, more welcoming, and more inclusive?
 
-```{r fig.width=14, fig.height=10, warning=FALSE, message=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 base_theme <- theme_minimal(base_size = 14) +
   theme(
     plot.title = element_text(face = "bold", size = 16, hjust = 0.5, color = "gray20"),
@@ -628,7 +614,7 @@ gender_customers <- df %>%
 
 The length of each trip also reveals a lot. Members typically keep it short and focused, averaging around 5 minutes per ride. That signals purpose—get on, get there, get off. Casual riders, though, average about 10 minutes. They’re clearly not in a rush. These are the rides where people slow down and take in the sights.
 
-```{r trip-duration-density-dashboard, fig.width=14, fig.height=5, warning=FALSE, message=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Filtered trip durations
 df_filtered <- df %>%
   filter(trip_duration_min >= 1, trip_duration_min <= 180)
@@ -698,7 +684,7 @@ trip_density_all + trip_density_customers +
 
 Even the routes people take reinforce that difference. Members mostly travel between business-heavy spots like Canal St & Adams St to Michigan Ave & Washington St. It's likely part of their usual routine. Meanwhile, casual riders gravitate toward scenic paths—think Lake Shore Dr & Monroe St to Streeter Dr & Grand Ave—close to tourist areas, waterfronts, and museums. The ride itself may be part of the experience.
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Top From → To Stations (Customers)
 top_pairs_customers <- df %>%
   filter(usertype == "Customer") %>%
@@ -732,7 +718,7 @@ kable(top_pairs_subscribers, align = 'c') %>%
 
 And speaking of scenic routes, one station stands out: Streeter Dr & Grand Ave. It’s the go-to spot for casual riders, whether they’re starting or wrapping up their trip. That makes it a key location for targeted marketing, service improvements, or even testing new ideas like pop-up bike events or rental promos.
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # Replace this with your actual data import if needed
 # df <- read_csv("your_cleaned_data.csv")
 
