@@ -1,4 +1,13 @@
 ---
+title: "One Ride Isn’t Enough: How Cyclistic Can Win Over Casual Riders"
+author: "Mikaela Janine"
+date: "2025-06-09"
+output: 
+  github_document:
+    html_preview: false
+---
+
+---
 
 **Let’s talk bikes**. Specifically, bike-share bikes. If you’ve ever rolled through the city with Cyclistic, your ride might tell a bigger story than you think.
 
