@@ -22,6 +22,5 @@ Let’s dive in.
 
 A quick glance at the numbers shows Cyclistic is driven mostly by its loyal members. They account for a huge 89.4% of all rides, while casual riders make up just 10.6%. That gap naturally raises a few questions: What sets these two groups apart? And more importantly, what would it take to turn more casual riders into long-term members?
 
-```{r echo=FALSE, out.width='70%'}
-knitr::include_graphics("Screenshot 2025-06-10 at 8.44.19 PM.png")
-```
+![Screenshot](Screenshot%202025-06-10%20at%208.44.19%E2%80%AFPM.png)
+
